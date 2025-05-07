@@ -1,6 +1,8 @@
 from pydantic import BaseModel
+from pydantic.v1 import UUID4
+
 
 class User(BaseModel):
-    id: str
+    id: UUID4
     login: str
     password: str

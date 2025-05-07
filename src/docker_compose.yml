@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  fastapi:
+    build: .
+    ports:
+      - "${PORT}:${PORT}"
+    environment:
+      - PORT=${PORT}
+    env_file:
+      - .env

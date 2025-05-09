@@ -1,13 +1,11 @@
-from pydantic import BaseModel
 from src.models.session import Session
 
-class SessionStorage(BaseModel):
-
-    data: dict[str, Session] # session_id -> session
+class SessionStorage:
+    def __init__(self):
+        self.data: dict[str, Session] = {}
 
     def get_user_id(self, session_id: str) -> str:
-        return self[session_id].user_id
-
+        return self.data[session_id].user_id
 
 # Создаем новое хранилище
 session_storage = SessionStorage()

@@ -5,7 +5,7 @@ from pydantic import BaseModel
 class Task(BaseModel):
     result: str
     status: str
-    data: str
+    data: bytes
 
 # Response-классы
 class TaskCreate(BaseModel):

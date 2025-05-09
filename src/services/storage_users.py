@@ -1,14 +1,11 @@
 from src.models.user import User
-from pydantic import BaseModel
 
+class UserStorage:
+    def __init__(self):
+        self.data: dict[str, User] = {}
 
-class UserStorage(BaseModel):
-
-    data: dict[User, str]
-
-    def get_password(self, user: User) -> str:
-        return self[User]
-
+    def get_password(self, user_id: str) -> str:
+        return self.data[user_id].password
 
 # Создаем новое хранилище
 users_storage = UserStorage()

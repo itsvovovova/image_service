@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 class JWTAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         # Пропускаем /login, /register
-        if request.url.path in ["/login", "/register"]:
+        if request.url.path.startswith(("/login", "/register")):
             return await call_next(request)
 
         # Получаем токен из заголовка
@@ -19,7 +19,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
 
         try:
             payload = jwt.decode(token, "SECRET_KEY", algorithms=["HS256"])
-            user_id = payload.get("user_id")
+            user_id = payload.get("username")
             if user_id is None:
                 print("Invalid token")
         except:

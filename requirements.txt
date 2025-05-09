@@ -1,3 +1,8 @@
-fastapi
+fastapi~=0.115.12
 uvicorn
-pydantic
+pydantic~=2.11.4
+passlib~=1.7.4
+pytest~=8.3.5
+requests~=2.32.3
+PyJWT~=2.10.1
+starlette~=0.46.2

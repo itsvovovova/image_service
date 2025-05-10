@@ -35,15 +35,9 @@ def test_login_user(user_data):
     data = response.json()
     assert 'token' in data
 
-def get_code_processor_payload():
-    return {"tranlator": "python3", "code": "print('Hello, stdout world!')"}
-
 def get_image_processor_payload():
-    with open("static/sigma.png", "rb") as image_file:
-        image_bytes = image_file.read()
-
-    image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-    return {"filter": {"name": "Negative"}, "image": image_base64}
+    with open("C:/Users/itsvo/Desktop/http_microservice/test_photo.jpg", "rb") as image_file:
+        return image_file.read()
 
 def test_create_task(auth_token):
     task_url = f"{BASE_URL}/task"
@@ -51,10 +45,11 @@ def test_create_task(auth_token):
         'Authorization': f'Bearer {auth_token}',
         'Content-Type': 'application/json'
     }
-    payload = "some task data"
-
-    response = requests.post(task_url, headers=headers, data=json.dumps(payload))
-
+    payload = get_image_processor_payload()
+    response = requests.post(task_url, headers={
+        'Authorization': f'Bearer {auth_token}',
+        'Content-Type': 'application/octet-stream'
+    }, data=payload)
     assert response.status_code == 201
     data = response.json()
     assert 'task_id' in data

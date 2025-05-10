@@ -3,9 +3,11 @@ from pydantic import BaseModel
 
 # Класс задачи
 class Task(BaseModel):
-    result: str
+    photo: bytes
+    filter: str = "None"
     status: str
-    data: bytes
+    result: bytes
+
 
 # Response-классы
 class TaskCreate(BaseModel):

@@ -1,3 +1,6 @@
+import os
+from time import time
+
 from fastapi import APIRouter
 from starlette.responses import JSONResponse
 
@@ -10,24 +13,26 @@ import jwt
 
 auth_router = APIRouter()
 
-@auth_router.post("/register", status_code=201)
-async def register_user(user_data: User):
-    if user_data.username in users_storage.data:
+@auth_router.post("/register")
+async def register_user(userdata: User):
+    if userdata.username in users_storage.data:
         return JSONResponse(status_code=400, content={"detail": "User already exists"})
-    password_hash = bcrypt.hash(user_data.password)
-    users_storage.data[user_data.username] = password_hash
+    password_hash = bcrypt.hash(userdata.password)
+    users_storage.data[userdata.username] = User(username=userdata.username, password=password_hash)
+    return JSONResponse(status_code=201, content={"detail": "User created"})
 
 @auth_router.post("/login", status_code=200)
-async def login_user(user_data: User):
-    if user_data.username not in users_storage.data:
+async def login_user(userdata: User):
+    if userdata.username not in users_storage.data:
         return JSONResponse(status_code=401, content={"detail": "Invalid credentials"})
-    current_password = users_storage.data[user_data.username]
-    if bcrypt.verify(user_data.password, current_password):
+    current_user = users_storage.data[userdata.username]
+    max_time = 10 ** 5
+    if bcrypt.verify(userdata.password, current_user.password):
         token = jwt.encode(
-            {"username": user_data.username},
-            "SECRET_KEY",
+            {"username": userdata.username, "exp": max_time + time()},
+            "KEY",
             algorithm="HS256"
         )
-        session_storage.data[token] = Session(user_id=user_data.username, session_id=token)
+        session_storage.data[token] = Session(user_id=userdata.username, session_id=token)
         return {"token": token}
     return JSONResponse(status_code=401, content={"detail": "Invalid credentials"})

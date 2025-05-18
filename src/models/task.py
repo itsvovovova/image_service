@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 # Класс задачи
 class Task(BaseModel):
+    #добавить юзера
     photo: bytes
     filter: str = "None"
     status: str
@@ -10,11 +11,19 @@ class Task(BaseModel):
 
 
 # Response-классы
-class TaskCreate(BaseModel):
-    task_uuid: UUID
 
-class StatusResponse(BaseModel):
-    status: str
+class TaskRequest(BaseModel):
+    photo: str
+    filter: str
 
-class ResultResponse(BaseModel):
-    result: str
+# class TaskCreate(BaseModel):
+#     task_uuid: UUID
+#
+# class StatusResponse(BaseModel):
+#     status: str
+#
+# class ResultResponse(BaseModel):
+#     result: str
+
+# class FilterRequest(BaseModel):
+#     filter: str

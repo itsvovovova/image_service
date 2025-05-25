@@ -3,7 +3,7 @@ from pydantic import BaseModel
 
 # Класс задачи
 class Task(BaseModel):
-    #добавить юзера
+    user: str
     photo: bytes
     filter: str = "None"
     status: str

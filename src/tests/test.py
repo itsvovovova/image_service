@@ -52,10 +52,9 @@ def get_image_processor_payload():
     image_base64 = base64.b64encode(image_bytes).decode('utf-8')
     return {"filter": "negative", "photo": image_base64}
 
-
 def create_task(auth_token):
     task_url = f"{BASE_URL}/task"
-    headers = {'Authorization': f'Bearer {auth_token}'}
+    headers = {'authorization': f'Bearer {auth_token}'}
 
     payload = get_image_processor_payload()
 
@@ -75,7 +74,7 @@ def test_task_status_and_result(auth_token):
     task_id = create_task(auth_token)
     status_url = f"{BASE_URL}/status/{task_id}"
     result_url = f"{BASE_URL}/result/{task_id}"
-    headers = {'Authorization': f'Bearer {auth_token}'}
+    headers = {'authorization': f'Bearer {auth_token}'}
 
     retry = 10
     while retry >= 0:
@@ -102,7 +101,7 @@ def test_task_not_found(auth_token):
     invalid_task_id = str(uuid.uuid4())
     status_url = f"{BASE_URL}/status/{invalid_task_id}"
     result_url = f"{BASE_URL}/result/{invalid_task_id}"
-    headers = {'Authorization': f'Bearer {auth_token}'}
+    headers = {'authorization': f'Bearer {auth_token}'}
 
     response = requests.get(status_url, headers=headers)
     assert response.status_code == 404

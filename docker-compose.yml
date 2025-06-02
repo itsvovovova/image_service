@@ -22,12 +22,12 @@ services:
     build:
       context: .
     ports:
-      - "${PORT}:${PORT}"
+      - "${app_port}:${app_port}"
     volumes:
       - ./src/tests:/app/tests
     environment:
-      - PORT=${PORT}
-      - KEY=${KEY}
+      - PORT=${app_port}
+      - KEY=${jwt_secret_key}
       - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_USER=guest
       - RABBITMQ_PASS=guest
@@ -38,8 +38,6 @@ services:
   consumer:
     build:
       context: .
-    command: ["python", "src/consumers/image_processor/consumer.py"]
-    ports:
-      - "8007:8007"
+    command: ["sh", "-c", "sleep 30 && python src/consumers/image_processor/consumer.py"]
     env_file:
       - ".env"

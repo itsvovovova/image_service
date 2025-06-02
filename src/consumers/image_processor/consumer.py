@@ -5,12 +5,12 @@ from pika.adapters.blocking_connection import BlockingConnection
 from pika.connection import ConnectionParameters
 from pika import PlainCredentials
 from pika.spec import BasicProperties
-from filter_photo import filter_photo
+from src.consumers.image_processor.filter_photo import filter_photo
 from src.config import get_settings
 
 credentials = PlainCredentials(get_settings().rabbitmq_user, get_settings().rabbitmq_password)
 parameters = ConnectionParameters(
-    host=get_settings().postgres_host,
+    host=get_settings().rabbitmq_host,
     port=get_settings().rabbitmq_port,
     credentials=credentials
 )

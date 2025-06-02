@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     # RabbitMQ
     rabbitmq_user: str = "guest"
     rabbitmq_password: str = "guest"
-    rabbitmq_host: str = "localhost"
+    rabbitmq_host: str = "rabbitmq"
     rabbitmq_port: int = 5672
     rabbitmq_management_port: int = 15672
 
@@ -22,7 +22,7 @@ class Settings(BaseSettings):
 
     # Приложение
     app_host: str = "0.0.0.0"
-    app_port: int = 8000
+    app_port: int = 8007
 
     # Режим работы
     debug: bool = False

@@ -1,38 +1,26 @@
-import os
+from fastapi import HTTPException
 from time import time
-
+from src.config import get_settings
 from fastapi import APIRouter
-from starlette.responses import JSONResponse
 
-from src.models.session import Session
-from src.models.user import User
-from src.services.storage_sessions import session_storage
-from src.services.storage_users import users_storage
-from passlib.hash import bcrypt
-import jwt
-
+from src.database.schemas import UserRequest
+from src.database.service import user_exists, add_user, password_verification
+from jwt import encode
 auth_router = APIRouter()
 
-@auth_router.post("/register")
-async def register_user(userdata: User):
-    if userdata.username in users_storage.data:
-        return JSONResponse(status_code=400, content={"detail": "User already exists"})
-    password_hash = bcrypt.hash(userdata.password)
-    users_storage.data[userdata.username] = User(username=userdata.username, password=password_hash)
-    return JSONResponse(status_code=201, content={"detail": "User created"})
+@auth_router.post("/register", status_code=201)
+async def register_user(userdata: UserRequest):
+    add_user(userdata)
+    return {"detail": "User created"}
 
 @auth_router.post("/login", status_code=200)
-async def login_user(userdata: User):
-    if userdata.username not in users_storage.data:
-        return JSONResponse(status_code=401, content={"detail": "Invalid credentials"})
-    current_user = users_storage.data[userdata.username]
-    max_time = 10 ** 5
-    if bcrypt.verify(userdata.password, current_user.password):
-        token = jwt.encode(
-            {"username": userdata.username, "exp": max_time + time()},
-            "KEY",
-            algorithm="HS256"
+async def login_user(userdata: UserRequest):
+    user_exists(userdata.username)
+    if password_verification(userdata):
+        token = encode(
+            {"username": userdata.username, "exp": get_settings().jwt_expire_minutes * 60 + time()},
+            get_settings().jwt_secret_key,
+            algorithm=get_settings().jwt_algorithm
         )
-        session_storage.data[token] = Session(user_id=userdata.username, session_id=token)
         return {"token": token}
-    return JSONResponse(status_code=401, content={"detail": "Invalid credentials"})
+    raise HTTPException(status_code=401, detail={"detail": "Invalid credentials"})

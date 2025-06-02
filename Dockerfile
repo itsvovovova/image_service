@@ -8,6 +8,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
+COPY src/tests /app/tests
+
 ENV PYTHONPATH=/app
 
 EXPOSE 8007

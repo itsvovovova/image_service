@@ -9,3 +9,7 @@ starlette~=0.46.2
 pika
 Pillow
 bcrypt~=3.2.2
+psycopg2-binary
+sqlalchemy
+redis[hiredis]
+pydantic_settings

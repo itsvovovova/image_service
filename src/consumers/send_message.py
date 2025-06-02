@@ -2,19 +2,22 @@ import json
 import uuid
 import base64
 import pika
+import os
+from src.config import get_settings
 
 def send_to_rabbitmq(image_bytes: bytes, filter_name: str) -> bytes:
-    print("\n\n\n1\n\n\n")
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host='localhost'))
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters(
+            host=get_settings().rabbitmq_host,
+            port=get_settings().rabbitmq_port)
+    )
+
     channel = connection.channel()
-    print("\n\n\n1\n\n\n")
     # Объявляем временную очередь для ответа
     result = channel.queue_declare(queue='', exclusive=True)
     callback_queue = result.method.queue
-    print("\n\n\n1\n\n\n")
     # Уникальный ID, чтобы сопоставить запрос и ответ
     corr_id = str(uuid.uuid4())
-    print("\n\n\n1\n\n\n")
     # Кодируем изображение в base64
     encoded_image = base64.b64encode(image_bytes).decode()
 

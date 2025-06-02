@@ -1,18 +1,28 @@
-from src.models.task import Task
-from uuid import uuid4, UUID
+import psycopg2
+from src.config import get_settings
+# Подключение к базе данных
+connection = psycopg2.connect(
+    dbname=get_settings().postgres_db,
+    user=get_settings().postgres_user,
+    password=get_settings().postgres_password,
+    host=get_settings().postgres_host,
+    port=get_settings().postgres_port
+)
 
-# Создаем хранилище, где TaskStorage.data = {uuid: task}
-class TaskStorage:
-    def __init__(self):
-        self.data: dict = {}
+cursor = connection.cursor()
 
-    def add(self, task: Task) -> UUID:
-        task_id = uuid4()
-        self.data[task_id] = task
-        return task_id
+# Создание базы данных
+cursor.execute("CREATE DATABASE "
+               "task(uuid VARCHAR(36), "
+               "photo BYTEA(250), "
+               "filter VARCHAR(100), "
+               "status VARCHAR(100), "
+               "result BYTEA(250));")
 
-    def get(self, task_id: UUID) -> Task:
-        return self.data[task_id]
+connection.commit()
+connection.close()
 
-# Создаем новое хранилище задач
-new_storage = TaskStorage()
+
+
+
+

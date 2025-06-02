@@ -1,25 +1,45 @@
-version: '3.8'
-
 services:
   rabbitmq:
     image: rabbitmq:3.12-management
     ports:
-      - "5672:5672"      # основной порт для AMQP
-      - "15672:15672"    # порт веб-менеджера
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+
+  db:
+    image: postgres:15
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    ports:
+      - "5432:5432"
 
   fastapi:
     build:
       context: .
     ports:
       - "${PORT}:${PORT}"
+    volumes:
+      - ./src/tests:/app/tests
     environment:
       - PORT=${PORT}
       - KEY=${KEY}
-      - RABBITMQ_HOST=rabbitmq  # переменная для подключения к RabbitMQ
+      - RABBITMQ_HOST=rabbitmq
       - RABBITMQ_USER=guest
       - RABBITMQ_PASS=guest
+      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
     depends_on:
       - rabbitmq
+      - db
+  consumer:
+    build:
+      context: .
+    command: ["python", "src/consumers/image_processor/consumer.py"]
+    ports:
+      - "8007:8007"
+    env_file:
+      - ".env"

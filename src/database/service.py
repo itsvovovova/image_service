@@ -1,4 +1,3 @@
-import uuid
 from logging import getLogger
 from passlib.handlers.bcrypt import bcrypt
 from sqlalchemy import select
@@ -65,13 +64,15 @@ def get_status(task_id: str) -> str:
             request = select(Task.status).where(Task.id == task_id)
             return str(current_session.execute(request).scalar())
 
-def get_result(task_id: str) -> str:
+def get_result(task_id: str) -> bytes:
     if not task_exist(task_id):
         raise KeyError("Task not exist")
     with Session(bind=engine) as current_session:
         with current_session.begin():
             request = select(Task.result).where(Task.id == task_id)
-            return str(current_session.execute(request).scalar())
+            return current_session.execute(request).scalar()
+
+
 
 
 

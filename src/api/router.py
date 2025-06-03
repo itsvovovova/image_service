@@ -1,12 +1,16 @@
 import base64
 import uuid
-
 from fastapi import APIRouter, Header, HTTPException
 from starlette.concurrency import run_in_threadpool
 from src.consumers.send_message import send_to_rabbitmq
 from src.database.service import add_task, task_exist
 from src.database.schemas import TaskRequest, TaskCreateRequest
 from src.database.service import get_result, get_status
+from fastapi.responses import StreamingResponse
+from PIL import Image
+from io import BytesIO
+
+
 current_router = APIRouter()
 
 @current_router.post("/task", status_code=201)
@@ -44,6 +48,6 @@ async def get_status_task(task_id: str, authorization: str = Header(...)):
 async def get_result_task(task_id: str, authorization: str = Header(...)):
     if not task_exist(task_id):
         raise HTTPException(status_code=404, detail="Task not exist")
-    task_result = get_result(task_id)
-    return {"result": task_result}
+    task_result = BytesIO(get_result(task_id))
+    return StreamingResponse(task_result, media_type="image/png")
 

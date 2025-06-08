@@ -10,7 +10,7 @@ logger = getLogger(__name__)
 
 class JWTAuthMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        if request.url.path.startswith(("/login", "/register")):
+        if request.url.path.startswith(("/login", "/register", "/metrics")):
             return await call_next(request)
 
         auth = request.headers.get("authorization")

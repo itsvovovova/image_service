@@ -2,7 +2,6 @@ from fastapi import HTTPException
 from time import time
 from src.config import get_settings
 from fastapi import APIRouter
-
 from src.database.schemas import UserRequest
 from src.database.service import user_exists, add_user, password_verification
 from jwt import encode
@@ -10,7 +9,7 @@ auth_router = APIRouter()
 
 @auth_router.post("/register", status_code=201)
 async def register_user(userdata: UserRequest):
-    await add_user(userdata)
+    add_user(userdata)
     return {"detail": "User created"}
 
 @auth_router.post("/login", status_code=200)

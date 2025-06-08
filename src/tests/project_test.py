@@ -1,10 +1,11 @@
 import base64
+import random
 import pytest
 import requests
 import uuid
 import time
 
-BASE_URL = "http://127.0.0.1:8007"
+BASE_URL = "http://fastapi:8007"
 
 @pytest.fixture(scope='module')
 def user_data():
@@ -44,7 +45,18 @@ def get_image_processor_payload():
         image_bytes = image_file.read()
 
     image_base64 = base64.b64encode(image_bytes).decode('utf-8')
-    return {"filter": "negative", "photo": image_base64}
+    filters = [
+        "Negative",
+        "Black & White",
+        "Soft Blur",
+        "Sharpen Details",
+        "Sketch Outline",
+        "Contour Drawing",
+        "Emboss Effect",
+        "Poster Style",
+        "Photo Negative"
+    ]
+    return {"filter": filters[random.randint(0, 8)], "photo": image_base64}
 
 def create_task(auth_token):
     task_url = f"{BASE_URL}/task"

@@ -1,5 +1,6 @@
 import base64
 import uuid
+from time import time
 from logging import getLogger
 from fastapi import APIRouter, Header, HTTPException
 from starlette.concurrency import run_in_threadpool
@@ -9,6 +10,7 @@ from src.database.schemas import TaskRequest, TaskCreateRequest
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from src.authorization.authorization import get_token
+from src.metrics.metrics import WORK_TIME, FILTERS_USED
 
 logger = getLogger(__name__)
 
@@ -21,11 +23,16 @@ async def create(req: TaskCreateRequest, authorization: str = Header(...)):
         image_bytes = base64.b64decode(req.photo)
     except Exception:
         raise HTTPException(status_code=400, detail={"detail": "Invalid base64 in `photo` field"})
+    start_time = time()
     # 2. Отправляем задачу в RabbitMQ и ждём результата
     try:
         result_bytes = await run_in_threadpool(send_to_rabbitmq, image_bytes, req.filter)
     except Exception as err:
         raise HTTPException(status_code=500, detail={"detail": f"Processing error: {err}"})
+
+    end_time = time() - start_time
+    WORK_TIME.observe(end_time)
+    FILTERS_USED.labels(filter=req.filter).inc()
     try:
         token = authorization.split(maxsplit=1)[1]
     except:

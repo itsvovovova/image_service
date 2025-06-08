@@ -10,7 +10,7 @@ auth_router = APIRouter()
 
 @auth_router.post("/register", status_code=201)
 async def register_user(userdata: UserRequest):
-    add_user(userdata)
+    await add_user(userdata)
     return {"detail": "User created"}
 
 @auth_router.post("/login", status_code=200)

@@ -4,6 +4,9 @@ import base64
 import pika
 import os
 from src.config import get_settings
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 def send_to_rabbitmq(image_bytes: bytes, filter_name: str) -> bytes:
     connection = pika.BlockingConnection(
@@ -52,12 +55,13 @@ def send_to_rabbitmq(image_bytes: bytes, filter_name: str) -> bytes:
         body=message.encode()
     )
 
-    print(f"[x] Sent task with filter '{filter_name}', waiting for reply...")
+    logger.info("The photo has been sent successfully, waiting for a response.")
 
     # Ожидаем ответ
     channel.start_consuming()
 
     # Декодируем base64 обратно в байты
     decoded_result = base64.b64decode(response)
+    logger.info("The modified photo was received")
     connection.close()
     return decoded_result

@@ -1,12 +1,14 @@
 import base64
 import json
-import os
 from pika.adapters.blocking_connection import BlockingConnection
 from pika.connection import ConnectionParameters
 from pika import PlainCredentials
 from pika.spec import BasicProperties
 from src.consumers.image_processor.filter_photo import filter_photo
 from src.config import get_settings
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 credentials = PlainCredentials(get_settings().rabbitmq_user, get_settings().rabbitmq_password)
 parameters = ConnectionParameters(
@@ -18,6 +20,8 @@ connection = BlockingConnection(parameters)
 channel = connection.channel()
 
 channel.queue_declare(queue='task_queue', durable=True)
+
+logger.info("Consumer connected to RabbitMQ")
 
 def callback(ch, method, properties, body):
     current_dict = json.loads(body.decode())
@@ -38,6 +42,7 @@ def callback(ch, method, properties, body):
             body=response.encode(),
             properties=BasicProperties(correlation_id=properties.correlation_id)
         )
+        logger.info("The photo was sent successfully")
     ch.basic_ack(delivery_tag=method.delivery_tag)
 channel.basic_consume(queue='task_queue', on_message_callback=callback, auto_ack=False)
 channel.start_consuming()

@@ -1,15 +1,16 @@
 import base64
 import uuid
+from logging import getLogger
 from fastapi import APIRouter, Header, HTTPException
 from starlette.concurrency import run_in_threadpool
 from src.consumers.send_message import send_to_rabbitmq
-from src.database.service import add_task, task_exist
+from src.database.service import add_task, task_exist, get_result, get_status, verification_task
 from src.database.schemas import TaskRequest, TaskCreateRequest
-from src.database.service import get_result, get_status
 from fastapi.responses import StreamingResponse
-from PIL import Image
 from io import BytesIO
+from src.authorization.authorization import get_token
 
+logger = getLogger(__name__)
 
 current_router = APIRouter()
 
@@ -32,22 +33,30 @@ async def create(req: TaskCreateRequest, authorization: str = Header(...)):
     # 3. Сохраняем задачу в хранилище
     try:
         task_uuid = str(uuid.uuid4())
-        add_task(TaskRequest(task_id=task_uuid, photo=image_bytes, result=result_bytes, filter=req.filter, status="ready"))
+        add_task(TaskRequest(task_id=task_uuid, user_token=token, photo=image_bytes, result=result_bytes, filter=req.filter, status="ready"))
     except KeyError:
         raise HTTPException(status_code=400, detail="Task already exist")
     # 4. Возвращаем идентификатор задачи
-    return {"task_id": task_uuid} # все-таки нужно taskid добавить
+    return {"task_id": task_uuid}
+
 @current_router.get("/status/{task_id}")
 async def get_status_task(task_id: str, authorization: str = Header(...)):
+    token = get_token(authorization)
     if not task_exist(task_id):
         raise HTTPException(status_code=404, detail="Task not exist")
+    if not verification_task(task_id, token):
+        raise HTTPException(status_code=403, detail={"detail": "Insufficient user rights"})
     task_status = get_status(task_id)
     return {"status": task_status}
 
 @current_router.get("/result/{task_id}")
 async def get_result_task(task_id: str, authorization: str = Header(...)):
+    token = get_token(authorization)
     if not task_exist(task_id):
         raise HTTPException(status_code=404, detail="Task not exist")
+    if not verification_task(task_id, token):
+        raise HTTPException(status_code=403, detail={"detail": "Insufficient user rights"})
     task_result = BytesIO(get_result(task_id))
+    logger.info("The result appeared on the page")
     return StreamingResponse(task_result, media_type="image/png")
 

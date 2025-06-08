@@ -1,5 +1,10 @@
 import psycopg2
 from src.config import get_settings
+from logging import getLogger
+
+logger = getLogger(__name__)
+
+
 # Подключение к базе данных
 connection = psycopg2.connect(
     dbname=get_settings().postgres_db,
@@ -8,6 +13,8 @@ connection = psycopg2.connect(
     host=get_settings().postgres_host,
     port=get_settings().postgres_port
 )
+
+logger.info("Connection to the database was completed successfully")
 
 cursor = connection.cursor()
 

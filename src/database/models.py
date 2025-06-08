@@ -9,6 +9,7 @@ class Base(DeclarativeBase):
 class Task(Base):
     __tablename__ = "tasks"
     id: Mapped[str] = mapped_column(primary_key=True, index=True)
+    user_token: Mapped[str]
     photo: Mapped[bytes]
     filter: Mapped[str]
     result: Mapped[bytes]

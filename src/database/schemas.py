@@ -6,6 +6,7 @@ class TaskCreateRequest(BaseModel):
 
 class TaskRequest(BaseModel):
     task_id: str
+    user_token: str
     photo: bytes
     filter: str = "negative"
     status: str = "in progress"

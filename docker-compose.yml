@@ -40,7 +40,7 @@ services:
   consumer:
     build:
       context: .
-    command: ["sh", "-c", "sleep 30 && python src/consumers/image_processor/consumer.py"]
+    command: ["sh", "-c", "sleep 15 && python src/consumers/image_processor/consumer.py"]
     env_file:
       - ".env"
   prometheus:

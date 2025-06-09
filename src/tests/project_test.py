@@ -1,11 +1,11 @@
-import base64
+from src.config import get_settings
 import random
 import pytest
 import requests
 import uuid
 import time
 
-BASE_URL = "http://fastapi:8007"
+BASE_URL = f"http://fastapi:{get_settings().app_port}"
 
 @pytest.fixture(scope='module')
 def user_data():

@@ -1,4 +1,4 @@
-from PIL import Image
+from PIL import Image, ImageFilter, ImageOps
 from io import BytesIO
 from logging import getLogger
 
@@ -6,10 +6,7 @@ logger = getLogger(__name__)
 
 
 def filter_photo(current_photo: bytes, current_filter: str) -> bytes:
-
     image = Image.open(BytesIO(current_photo))
-
-    from PIL import ImageFilter, ImageOps
 
     match current_filter:
         case "Negative":
@@ -33,7 +30,8 @@ def filter_photo(current_photo: bytes, current_filter: str) -> bytes:
         case _:
             result = image
     byte_io = BytesIO()
-    result.save(byte_io, format='PNG')
+    result.save(byte_io, format='jpeg')
+    byte_io.seek(0)
     rvalue = byte_io.getvalue()
     logger.info("The photo was successfully modified")
 

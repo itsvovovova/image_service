@@ -10,6 +10,13 @@ from logging import getLogger
 
 logger = getLogger(__name__)
 
+"""
+Listens to the task_queue queue,
+processes images on request,
+sends the result back via reply_to,
+and confirms receipt
+"""
+
 credentials = PlainCredentials(get_settings().rabbitmq_user, get_settings().rabbitmq_password)
 parameters = ConnectionParameters(
     host=get_settings().rabbitmq_host,
@@ -30,11 +37,9 @@ def callback(ch, method, properties, body):
     photo_bytes = base64.b64decode(photo_b64)
     result = filter_photo(photo_bytes, current_dict["filter"])
 
-    # Готовим ответ
     result_b64 = base64.b64encode(result).decode('utf-8')
     response = json.dumps({"result": result_b64})
 
-    # Проверяем, есть ли куда отправлять
     if properties.reply_to:
         ch.basic_publish(
             exchange='',

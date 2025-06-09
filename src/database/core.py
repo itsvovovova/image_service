@@ -1,27 +1,20 @@
 from sqlalchemy import create_engine, MetaData
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy_utils import database_exists, create_database
 from logging import getLogger
 from src.config import get_settings
-from sqlalchemy.orm import sessionmaker
-
-from src.database.models import Base
 
 log = getLogger(__name__)
 
-# Создаем метаданные
+database_url = get_settings().database_url
+
+engine = create_engine(database_url)
+
+if not database_exists(engine.url):
+    create_database(engine.url)
+    log.info("Database did not exist — created new one.")
+else:
+    log.info("Database already exists.")
+
 meta_data = MetaData()
-
-# Подключаемся к уже существующей бд
-engine = create_engine(get_settings().database_url)
-log.info("The database is connected")
-
 Session = sessionmaker(autoflush=False, bind=engine)
-
-
-
-
-
-
-
-
-
-

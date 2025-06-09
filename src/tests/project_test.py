@@ -41,10 +41,6 @@ def test_login_user(user_data):
     assert 'token' in data
 
 def get_image_processor_payload():
-    with open("tests/test_photo.jpg", "rb") as image_file:
-        image_bytes = image_file.read()
-
-    image_base64 = base64.b64encode(image_bytes).decode('utf-8')
     filters = [
         "Negative",
         "Black & White",
@@ -56,7 +52,7 @@ def get_image_processor_payload():
         "Poster Style",
         "Photo Negative"
     ]
-    return {"filter": filters[random.randint(0, 8)], "photo": image_base64}
+    return {"filter": filters[random.randint(0, 8)], "photo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJYWtIROhI953uiZewlQFQZF-h4UTxb3ZT5Q&s"}
 
 def create_task(auth_token):
     task_url = f"{BASE_URL}/task"

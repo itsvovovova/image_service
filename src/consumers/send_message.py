@@ -2,13 +2,17 @@ import json
 import uuid
 import base64
 import pika
-import os
 from src.config import get_settings
 from logging import getLogger
 
 logger = getLogger(__name__)
 
 def send_to_rabbitmq(image_bytes: bytes, filter_name: str) -> bytes:
+    """
+    This function takes a photo and a filter as input,
+    sends a message to the RabbitMQ intermediary,
+    waits for a response, and returns the result of processing the photo.
+    """
     connection = pika.BlockingConnection(
         pika.ConnectionParameters(
             host=get_settings().rabbitmq_host,
@@ -16,17 +20,16 @@ def send_to_rabbitmq(image_bytes: bytes, filter_name: str) -> bytes:
     )
 
     channel = connection.channel()
-    # Объявляем временную очередь для ответа
+    # Temporary response queue
     result = channel.queue_declare(queue='', exclusive=True)
     callback_queue = result.method.queue
-    # Уникальный ID, чтобы сопоставить запрос и ответ
+    # To compare a request and a response
     corr_id = str(uuid.uuid4())
-    # Кодируем изображение в base64
     encoded_image = base64.b64encode(image_bytes).decode()
 
     response = None
 
-    # Колбэк, который будет вызываться при получении ответа
+    # Needed to get a response
     def on_response(ch, method, props, body):
         nonlocal response
         if props.correlation_id == corr_id:
@@ -44,7 +47,7 @@ def send_to_rabbitmq(image_bytes: bytes, filter_name: str) -> bytes:
         "filter": filter_name
     })
 
-    # Отправка задачи с reply_to и correlation_id
+    # Sending a photo
     channel.basic_publish(
         exchange='',
         routing_key='task_queue',
@@ -57,10 +60,9 @@ def send_to_rabbitmq(image_bytes: bytes, filter_name: str) -> bytes:
 
     logger.info("The photo has been sent successfully, waiting for a response.")
 
-    # Ожидаем ответ
+    # Waiting for a response
     channel.start_consuming()
 
-    # Декодируем base64 обратно в байты
     decoded_result = base64.b64decode(response)
     logger.info("The modified photo was received")
     connection.close()

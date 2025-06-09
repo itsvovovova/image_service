@@ -15,3 +15,4 @@ redis[hiredis]
 pydantic_settings
 prometheus_fastapi_instrumentator
 prometheus-client
+sqlalchemy_utils

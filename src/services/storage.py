@@ -5,7 +5,7 @@ from logging import getLogger
 logger = getLogger(__name__)
 
 
-# Подключение к базе данных
+# Connecting to the database
 connection = psycopg2.connect(
     dbname=get_settings().postgres_db,
     user=get_settings().postgres_user,
@@ -18,13 +18,17 @@ logger.info("Connection to the database was completed successfully")
 
 cursor = connection.cursor()
 
-# Создание базы данных
-cursor.execute("CREATE DATABASE "
-               "task(uuid VARCHAR(36), "
-               "photo BYTEA(250), "
-               "filter VARCHAR(100), "
-               "status VARCHAR(100), "
-               "result BYTEA(250));")
+# Creating a table
+cursor.execute("""
+CREATE TABLE IF NOT EXISTS task (
+    uuid VARCHAR(36) PRIMARY KEY,
+    photo BYTEA,
+    filter VARCHAR(100),
+    status VARCHAR(100),
+    result BYTEA
+);
+""")
+
 
 connection.commit()
 connection.close()

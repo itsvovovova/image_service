@@ -1,10 +1,9 @@
 from logging import getLogger, basicConfig, DEBUG
 
-logger = getLogger(__name__)
-
 basicConfig(
     level=DEBUG,
-    format="{asctime} | {module: 12.12s} | {lineno: 4d} | "
-           "{process} | {threadName} | {levelname: 4.4s}| {message}",
+    format="{asctime} | {module:<12} | {lineno:<4} | "
+           "{process:<6} | {threadName:<15} | {levelname:<5} | {message}",
     style='{'
 )
+logger = getLogger(__name__)

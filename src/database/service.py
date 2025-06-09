@@ -43,7 +43,7 @@ def add_task(task: TaskRequest):
         raise KeyError("Task already exist")
     with Session(bind=engine) as current_session:
         with current_session.begin():
-            current_object = Task(user_token=task.user_token, id=task.task_id, photo=task.photo, filter=task.filter, result=bytes(), status="ready")
+            current_object = Task(user_token=task.user_token, id=task.task_id, photo=task.photo, filter=task.filter, result=task.result, status="ready")
             current_session.add(current_object)
     logger.info("Task added")
 

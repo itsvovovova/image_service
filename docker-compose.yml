@@ -1,22 +1,19 @@
 services:
   rabbitmq:
     image: rabbitmq:3.12-management
+    env_file:
+      - .env
     ports:
-      - "5672:5672"
-      - "15672:15672"
-    environment:
-      RABBITMQ_DEFAULT_USER: guest
-      RABBITMQ_DEFAULT_PASS: guest
+      - "${rabbitmq_port}:${rabbitmq_port}"
+      - "${rabbitmq_management_port}:${rabbitmq_management_port}"
 
   db:
     image: postgres:15
     restart: always
-    environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: postgres
+    env_file:
+      - .env
     ports:
-      - "5432:5432"
+      - "${postgres_port}:${postgres_port}"
 
   fastapi:
     build:
@@ -27,13 +24,6 @@ services:
       - "${app_port}:${app_port}"
     volumes:
       - ./src/tests:/app/tests
-    environment:
-      - PORT=${app_port}
-      - KEY=${jwt_secret_key}
-      - RABBITMQ_HOST=rabbitmq
-      - RABBITMQ_USER=guest
-      - RABBITMQ_PASS=guest
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/postgres
     depends_on:
       - rabbitmq
       - db
@@ -43,18 +33,19 @@ services:
     command: ["sh", "-c", "sleep 15 && python src/consumers/image_processor/consumer.py"]
     env_file:
       - ".env"
+
   prometheus:
     image: prom/prometheus
     volumes:
       - ./src/prometheus_data/prometheus.yml:/etc/prometheus/prometheus.yml
+    env_file:
+      - .env
     ports:
-      - "9090:9090"
+      - "${prometheus_port}:${prometheus_port}"
+
   grafana:
     image: grafana/grafana
+    env_file:
+      - .env
     ports:
-      - "3000:3000"
-    volumes:
-      - grafana-storage:/var/lib/grafana
-
-volumes:
-  grafana-storage:
+      - "${grafana_port}:${grafana_port}"

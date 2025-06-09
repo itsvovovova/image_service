@@ -1,7 +1,7 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, HttpUrl
 
 class TaskCreateRequest(BaseModel):
-    photo: str
+    photo: HttpUrl
     filter: str
 
 class TaskRequest(BaseModel):

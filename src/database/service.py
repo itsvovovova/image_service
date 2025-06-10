@@ -5,6 +5,7 @@ from fastapi import HTTPException
 from src.database.models import User, Task
 from src.database.core import engine, Session
 from src.database.schemas import UserRequest, TaskRequest
+from src.cache.service import get_user
 
 logger = getLogger(__name__)
 
@@ -43,7 +44,7 @@ def add_task(task: TaskRequest):
         raise KeyError("Task already exist")
     with Session(bind=engine) as current_session:
         with current_session.begin():
-            current_object = Task(user_token=task.user_token, id=task.task_id, photo=task.photo, filter=task.filter, result=task.result, status="ready")
+            current_object = Task(username=task.username, id=task.task_id, photo=task.photo, filter=task.filter, result=task.result, status="ready")
             current_session.add(current_object)
     logger.info("Task added")
 
@@ -77,8 +78,8 @@ def get_result(task_id: str) -> bytes:
 def verification_task(task_id: str, token: str) -> bool:
     with Session(bind=engine) as current_session:
         with current_session.begin():
-            request = select(Task.user_token).where(Task.id == task_id)
-            if not current_session.execute(request).scalar() or current_session.execute(request).scalar() != token:
+            request = select(Task.username).where(Task.id == task_id)
+            if not current_session.execute(request).scalar() or current_session.execute(request).scalar() != get_user(token):
                 logger.info("Insufficient user rights")
                 return False
             logger.info("The photo of this user was found")

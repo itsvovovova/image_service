@@ -12,6 +12,8 @@ services:
     restart: always
     env_file:
       - .env
+    environment:
+      POSTGRES_PASSWORD: postgres
     ports:
       - "${postgres_port}:${postgres_port}"
 

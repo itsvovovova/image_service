@@ -1,4 +1,3 @@
-import base64
 import uuid
 from time import time
 from logging import getLogger
@@ -8,6 +7,7 @@ from starlette.concurrency import run_in_threadpool
 from src.consumers.send_message import send_to_rabbitmq
 from src.database.service import add_task, task_exist, get_result, get_status, verification_task
 from src.database.schemas import TaskRequest, TaskCreateRequest
+from src.cache.service import get_user
 from fastapi.responses import StreamingResponse
 from io import BytesIO
 from src.metrics.metrics import WORK_TIME, FILTERS_USED
@@ -41,6 +41,7 @@ async def create(req: TaskCreateRequest, authorization: str = Header(...)):
     completed successfully in middleware authorization
     """
     token = authorization.split(maxsplit=1)[1]
+    user = get_user(token)
     task_uuid = str(uuid.uuid4())
     """
     An important point. You may notice that here
@@ -50,7 +51,7 @@ async def create(req: TaskCreateRequest, authorization: str = Header(...)):
     is no need to perform unnecessary actions with the database.
     """
     add_task(TaskRequest(
-        task_id=task_uuid, user_token=token,
+        task_id=task_uuid, username=user,
         photo=image_bytes, result=result_bytes,
         filter=req.filter, status="ready"))
     return {"task_id": task_uuid}

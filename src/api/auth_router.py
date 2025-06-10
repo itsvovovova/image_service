@@ -5,6 +5,7 @@ from fastapi import APIRouter
 from src.database.schemas import UserRequest
 from src.database.service import add_user, password_verification
 from jwt import encode
+from src.cache.service import create_session
 auth_router = APIRouter()
 
 @auth_router.post("/register", status_code=201)
@@ -24,5 +25,6 @@ async def login_user(userdata: UserRequest):
             get_settings().jwt_secret_key,
             algorithm=get_settings().jwt_algorithm
         )
+        create_session(userdata.username, token)
         return {"token": token}
     raise HTTPException(status_code=401, detail={"detail": "Invalid credentials"})

@@ -1,69 +1,64 @@
 import json
 import uuid
 import base64
-import pika
+import asyncio
+from aio_pika import connect_robust, Message, DeliveryMode  # ← замена pika на aio-pika
 from src.config import get_settings
 from logging import getLogger
 
 logger = getLogger(__name__)
 
-def send_to_rabbitmq(image_bytes: bytes, filter_name: str) -> bytes:
+async def send_to_rabbitmq(image_bytes: bytes, filter_name: str) -> bytes:
     """
     This function takes a photo and a filter as input,
     sends a message to the RabbitMQ intermediary,
     waits for a response, and returns the result of processing the photo.
     """
-    connection = pika.BlockingConnection(
-        pika.ConnectionParameters(
-            host=get_settings().rabbitmq_host,
-            port=get_settings().rabbitmq_port)
+    settings = get_settings()
+    connection = await connect_robust(
+        host=settings.rabbitmq_host,
+        port=settings.rabbitmq_port,
+        login=settings.rabbitmq_user,
+        password=settings.rabbitmq_password,
     )
 
-    channel = connection.channel()
-    # Temporary response queue
-    result = channel.queue_declare(queue='', exclusive=True)
-    callback_queue = result.method.queue
-    # To compare a request and a response
-    corr_id = str(uuid.uuid4())
-    encoded_image = base64.b64encode(image_bytes).decode()
+    async with connection:
+        channel = await connection.channel()
+        # Temporary response queue
+        callback_queue = await channel.declare_queue(exclusive=True)
+        # To compare a request and a response
+        corr_id = str(uuid.uuid4())
+        encoded_image = base64.b64encode(image_bytes).decode()
 
-    response = None
+        response_future = asyncio.get_event_loop().create_future()
 
-    # Needed to get a response
-    def on_response(ch, method, props, body):
-        nonlocal response
-        if props.correlation_id == corr_id:
-            response = json.loads(body.decode())["result"]
-            ch.stop_consuming()
+        # Needed to get a response
+        async def on_response(message):
+            if message.correlation_id == corr_id:
+                body = json.loads(message.body.decode())
+                response_future.set_result(body["result"])
+            await message.ack()
 
-    channel.basic_consume(
-        queue=callback_queue,
-        on_message_callback=on_response,
-        auto_ack=True
-    )
+        await callback_queue.consume(on_response)  # ← await
 
-    message = json.dumps({
-        "photo": encoded_image,
-        "filter": filter_name
-    })
+        message = json.dumps({
+            "photo": encoded_image,
+            "filter": filter_name
+        }).encode()
 
-    # Sending a photo
-    channel.basic_publish(
-        exchange='',
-        routing_key='task_queue',
-        properties=pika.BasicProperties(
-            reply_to=callback_queue,
-            correlation_id=corr_id
-        ),
-        body=message.encode()
-    )
+        # Sending a photo
+        msg = Message(
+            message,
+            correlation_id=corr_id,
+            reply_to=callback_queue.name,
+            delivery_mode=DeliveryMode.PERSISTENT,
+        )
+        await channel.default_exchange.publish(msg, routing_key="task_queue")
+        logger.info("The photo has been sent successfully, waiting for a response.")
 
-    logger.info("The photo has been sent successfully, waiting for a response.")
+        # Waiting for a response
+        result_b64 = await asyncio.wait_for(response_future, timeout=30)
+        decoded_result = base64.b64decode(result_b64)
+        logger.info("The modified photo was received")
 
-    # Waiting for a response
-    channel.start_consuming()
-
-    decoded_result = base64.b64decode(response)
-    logger.info("The modified photo was received")
-    connection.close()
-    return decoded_result
+        return decoded_result

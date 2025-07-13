@@ -16,7 +16,7 @@ class Settings(BaseSettings):
     postgres_port: int = 5432
     postgres_db: str = "image_database"
     database_url: str = (
-        f"postgresql://{postgres_user}:{postgres_password}"
+        f"postgresql+asyncpg://{postgres_user}:{postgres_password}"
         f"@{postgres_host}:{postgres_port}/{postgres_db}"
     )
 

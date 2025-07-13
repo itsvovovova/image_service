@@ -17,7 +17,7 @@ class JWTAuthMiddleware(BaseHTTPMiddleware):
             return JSONResponse(status_code=401, content={"detail": "Unauthorized"})
         token = auth.split(maxsplit=1)[1]
         try:
-            payload = jwt.decode(token, get_settings().jwt_secret_key, algorithms=get_settings().jwt_algorithm)
+            payload = jwt.decode(token, get_settings().jwt_secret_key, algorithms=get_settings().jwt_algorithm, options={"require": ["exp", "username"]})
         except:
             return JSONResponse(status_code=401, content={"detail": "Invalid token"})
         request.state.user_id = payload.get("username")

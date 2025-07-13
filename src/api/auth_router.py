@@ -20,7 +20,7 @@ async def register_user(userdata: UserRequest, session: AsyncSession = Depends(g
 
 @auth_router.post("/login", status_code=200)
 async def login_user(userdata: UserRequest, session: AsyncSession = Depends(get_async_session)):
-    if password_verification(userdata, session):
+    if await password_verification(userdata, session):
         """
         The password verification function also handles
         the case when the login does not exist in the database.

@@ -1,9 +1,8 @@
+import asyncio
 import base64
 import json
-from pika.adapters.blocking_connection import BlockingConnection
-from pika.connection import ConnectionParameters
-from pika import PlainCredentials
-from pika.spec import BasicProperties
+from aio_pika import connect_robust, Message, DeliveryMode
+
 from src.consumers.image_processor.filter_photo import filter_photo
 from src.config import get_settings
 from logging import getLogger
@@ -17,37 +16,40 @@ sends the result back via reply_to,
 and confirms receipt
 """
 
-credentials = PlainCredentials(get_settings().rabbitmq_user, get_settings().rabbitmq_password)
-parameters = ConnectionParameters(
-    host=get_settings().rabbitmq_host,
-    port=get_settings().rabbitmq_port,
-    credentials=credentials
-)
-connection = BlockingConnection(parameters)
-channel = connection.channel()
+async def main():
+    settings = get_settings()
+    connection = await connect_robust(
+        host=settings.rabbitmq_host,
+        port=settings.rabbitmq_port,
+        login=settings.rabbitmq_user,
+        password=settings.rabbitmq_password,
+    )
+    async with connection:
+        channel = await connection.channel()
+        queue = await channel.declare_queue('task_queue', durable=True)
+        logger.info("Consumer connected to RabbitMQ")
 
-channel.queue_declare(queue='task_queue', durable=True)
+        async with queue.iterator() as queue_iter:
+            async for message in queue_iter:
+                async with message.process():
+                    current_dict = json.loads(message.body.decode())
 
-logger.info("Consumer connected to RabbitMQ")
+                    photo_bytes = base64.b64decode(current_dict["photo"])
+                    result = filter_photo(photo_bytes, current_dict["filter"])
 
-def callback(ch, method, properties, body):
-    current_dict = json.loads(body.decode())
+                    result_b64 = base64.b64encode(result).decode('utf-8')
+                    response = json.dumps({"result": result_b64}).encode()
 
-    photo_b64 = current_dict["photo"]
-    photo_bytes = base64.b64decode(photo_b64)
-    result = filter_photo(photo_bytes, current_dict["filter"])
+                    if message.reply_to:
+                        await channel.default_exchange.publish(
+                            Message(
+                                response,
+                                correlation_id=message.correlation_id,
+                                delivery_mode=DeliveryMode.PERSISTENT,
+                            ),
+                            routing_key=message.reply_to
+                        )
+                        logger.info("The photo was sent successfully")
 
-    result_b64 = base64.b64encode(result).decode('utf-8')
-    response = json.dumps({"result": result_b64})
-
-    if properties.reply_to:
-        ch.basic_publish(
-            exchange='',
-            routing_key=properties.reply_to,
-            body=response.encode(),
-            properties=BasicProperties(correlation_id=properties.correlation_id)
-        )
-        logger.info("The photo was sent successfully")
-    ch.basic_ack(delivery_tag=method.delivery_tag)
-channel.basic_consume(queue='task_queue', on_message_callback=callback, auto_ack=False)
-channel.start_consuming()
+if __name__ == "__main__":
+    asyncio.run(main())
